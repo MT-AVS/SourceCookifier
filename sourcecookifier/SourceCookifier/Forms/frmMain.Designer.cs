@@ -20,6 +20,7 @@ namespace SourceCookifier
 				}
 			}
 			base.Dispose(disposing);
+			if (disposing && selectedTreeFont != null) selectedTreeFont.Dispose();
 		}
 		
 		/// <summary>

@@ -178,6 +178,62 @@ static char* scanSeparators (char* name)
 				*copyto++ = sep;
 			else if (*name == 't')
 				*copyto++ = '\t';
+			else if (*name == 'u' || *name == 'U')
+			{
+				const unsigned int digits = *name == 'u' ? 4 : 8;
+				const char *hex = name + 1;
+				unsigned long codePoint = 0;
+				unsigned int i;
+				boolean valid = TRUE;
+
+				for (i = 0; i < digits; ++i)
+				{
+					int value;
+					if (hex [i] >= '0' && hex [i] <= '9')
+						value = hex [i] - '0';
+					else if (hex [i] >= 'a' && hex [i] <= 'f')
+						value = hex [i] - 'a' + 10;
+					else if (hex [i] >= 'A' && hex [i] <= 'F')
+						value = hex [i] - 'A' + 10;
+					else
+					{
+						valid = FALSE;
+						break;
+					}
+					codePoint = codePoint * 16 + value;
+				}
+
+				if (valid && codePoint > 0 && codePoint <= 0x10FFFF &&
+					(codePoint < 0xD800 || codePoint > 0xDFFF))
+				{
+					if (codePoint <= 0x7F)
+						*copyto++ = (char) codePoint;
+					else if (codePoint <= 0x7FF)
+					{
+						*copyto++ = (char) (0xC0 | (codePoint >> 6));
+						*copyto++ = (char) (0x80 | (codePoint & 0x3F));
+					}
+					else if (codePoint <= 0xFFFF)
+					{
+						*copyto++ = (char) (0xE0 | (codePoint >> 12));
+						*copyto++ = (char) (0x80 | ((codePoint >> 6) & 0x3F));
+						*copyto++ = (char) (0x80 | (codePoint & 0x3F));
+					}
+					else
+					{
+						*copyto++ = (char) (0xF0 | (codePoint >> 18));
+						*copyto++ = (char) (0x80 | ((codePoint >> 12) & 0x3F));
+						*copyto++ = (char) (0x80 | ((codePoint >> 6) & 0x3F));
+						*copyto++ = (char) (0x80 | (codePoint & 0x3F));
+					}
+					name += digits;
+				}
+				else
+				{
+					*copyto++ = '\\';
+					*copyto++ = *name;
+				}
+			}
 			else
 			{
 				/* Something else is quoted, so preserve the quote. */

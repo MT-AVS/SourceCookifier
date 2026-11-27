@@ -1,13 +1,55 @@
 INSTALLATION:
 -------------
-    -place these files and folders into Notepad++'s "plugins" folder
-    -BUT (!!!) if you installed N++ with "Don't use %APPDATA%" UNCHECKED,
-     then place the "Config" folder into "%APPDATA%\Notepad++\plugins" instead!
+    -place the SourceCookifier folder in Notepad++'s "plugins" folder
+    -replace the DLL and bin\ctags.exe together; their versions must match
     -check out the help text ("Help & About")
     -enjoy
 
+UNICODE REGEX:
+-------------
+    -custom regex rules support Unicode literals and captured tag names
+    -save source files as UTF-8 when matching Unicode text
+    -rules with the lazy *? quantifier use .NET regular expressions and match each
+     occurrence on a line; other rules retain the original ctags regex syntax
+    -lazy regex rules require UTF-8 or Unicode files with a byte order mark
+    -the default TXT language matches .txt files using Input =
+     《(.*?)》(之《(.*?)》)? and Output = 《\1》\2
+    -the default TXT tag icon is LABEL_4.png; additional icons by MT are
+     available in Language Settings
+    -existing language settings are preserved when upgrading; the model file
+     is used for new settings, not to overwrite existing customizations
+
+TAG SORT ORDER:
+-------------
+    -the View menu offers document order and reverse document order
+    -Zhuyin order uses the Windows zh-TW pronunciation collation; reverse
+     order reverses the complete collation, including ㄧ, ㄨ and ㄩ
+    -the system's reading is used for characters with multiple pronunciations
+    -surrounding 《》 are ignored when comparing tag names
+    -ctags does not report positions within a line, so the relative order of
+     its tags and lazy-regex matches on the same line cannot be determined
+    -file and tag-type grouping is preserved
+
+TREE FONT:
+----------
+    -use View > Font... to choose the result tree's font, style and size
+    -View > Use default font restores the original font
+    -the selection is saved when Notepad++ exits
+
+BUILD:
+-------------
+    -restore NuGet packages before building the SourceCookifier project
+    -DllExport 1.8.1 is required to export the Notepad++ plugin entry points
+    -compile Tests\test_plugin_exports.c with the x64 C compiler and run it
+     with the path to the built DLL to check the plugin exports
+
 CHANGES:
 -------------
+    0.11.0
+       V0.11.0 updated by Ming-Tsung Huang, Taipei, 2026-11-25.
+       V0.11.0 於 2026-11-25 由黃明聰在台北更新。
+       -Unicode lazy regex support and default TXT book-title rule
+       -document and Zhuyin sorting; configurable tree font
     0.10.0
        -Build for Notepad++ 64 bit and drop building for Notepad++ 32 bit
     0.7.3

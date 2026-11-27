@@ -1,5 +1,5 @@
 @ECHO OFF
-SET VERSION=v0.10.0
+SET VERSION=v0.11.0
 
 SET ZIP="C:\Program Files\7-Zip\7z.exe"
 

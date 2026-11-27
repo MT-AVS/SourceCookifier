@@ -12,6 +12,9 @@ namespace SourceCookifier
 {
     public partial class frmMain : Form
     {
+        ToolStripMenuItem tagSortMenu;
+        Font selectedTreeFont;
+
         #region " Main "
         public frmMain()
         {
@@ -89,6 +92,10 @@ namespace SourceCookifier
             cmsShow.ShowImageMargin = Settings.Configs.ShowIcons;
             cmsTrackCaret.ShowImageMargin = Settings.Configs.ShowIcons;
             tsmiAlphabeticalSort.Checked = Settings.Configs.SortTags;
+            InitializeTagSortMenu();
+            InitializeTreeFontMenu();
+            try { ApplyTreeFont(Settings.Configs.CreateTreeFont()); }
+            catch (Exception ex) { Main.ErrorOut(ex); }
             switch (Settings.Configs.FoldLevel)
             {
                 case 1: tsmiLevel1.Checked = true; break;
@@ -725,6 +732,114 @@ namespace SourceCookifier
             try
             {
                 Settings.Configs.SortTags = tsmiAlphabeticalSort.Checked;
+                Settings.Configs.TagSort = Settings.TagSortMode.Legacy;
+                UpdateTagSortMenu();
+                RefreshTreeView(Source.RefreshType.None, true, -1);
+            }
+            catch (Exception ex) { Main.ErrorOut(ex); }
+        }
+
+        void InitializeTagSortMenu()
+        {
+            tagSortMenu = new ToolStripMenuItem("Tag sort order");
+            AddTagSortOption("Original sorting", Settings.TagSortMode.Legacy);
+            AddTagSortOption("Document: first to last", Settings.TagSortMode.DocumentForward);
+            AddTagSortOption("Document: last to first", Settings.TagSortMode.DocumentReverse);
+            AddTagSortOption("Zhuyin: forward (ㄅ first)", Settings.TagSortMode.ZhuyinForward);
+            AddTagSortOption("Zhuyin: reverse", Settings.TagSortMode.ZhuyinReverse);
+            tsDdbtnView.DropDownItems.Insert(
+                tsDdbtnView.DropDownItems.IndexOf(tsmiAlphabeticalSort) + 1, tagSortMenu);
+            ValidateTagSortMode(Settings.Configs.TagSort);
+            UpdateTagSortMenu();
+        }
+
+        void InitializeTreeFontMenu()
+        {
+            ToolStripMenuItem chooseFont = new ToolStripMenuItem("Font...");
+            chooseFont.Click += ChooseTreeFontClick;
+            ToolStripMenuItem resetFont = new ToolStripMenuItem("Use default font");
+            resetFont.Click += ResetTreeFontClick;
+            int index = tsDdbtnView.DropDownItems.IndexOf(tagSortMenu) + 1;
+            tsDdbtnView.DropDownItems.Insert(index, chooseFont);
+            tsDdbtnView.DropDownItems.Insert(index + 1, resetFont);
+        }
+
+        void ApplyTreeFont(Font font)
+        {
+            Font oldFont = selectedTreeFont;
+            try
+            {
+                tvTags.Font = font;
+                Source.UpdateIncludeFonts(tvTags);
+            }
+            catch
+            {
+                tvTags.Font = oldFont;
+                if (font != null) font.Dispose();
+                throw;
+            }
+            selectedTreeFont = font;
+            if (oldFont != null) oldFont.Dispose();
+        }
+
+        void ChooseTreeFontClick(object sender, EventArgs e)
+        {
+            try
+            {
+                using (FontDialog dialog = new FontDialog())
+                {
+                    dialog.Font = tvTags.Font;
+                    dialog.FontMustExist = true;
+                    dialog.ShowEffects = false;
+                    if (dialog.ShowDialog(this) != DialogResult.OK) return;
+                    Font font = new Font(dialog.Font, dialog.Font.Style);
+                    ApplyTreeFont(font);
+                    Settings.Configs.SetTreeFont(font);
+                }
+            }
+            catch (Exception ex) { Main.ErrorOut(ex); }
+        }
+
+        void ResetTreeFontClick(object sender, EventArgs e)
+        {
+            try
+            {
+                ApplyTreeFont(null);
+                Settings.Configs.SetTreeFont(null);
+            }
+            catch (Exception ex) { Main.ErrorOut(ex); }
+        }
+
+        void AddTagSortOption(string text, Settings.TagSortMode mode)
+        {
+            ToolStripMenuItem item = new ToolStripMenuItem(text);
+            item.Tag = mode;
+            item.Click += TagSortOptionClick;
+            tagSortMenu.DropDownItems.Add(item);
+        }
+
+        static void ValidateTagSortMode(Settings.TagSortMode mode)
+        {
+            if (mode == Settings.TagSortMode.ZhuyinForward || mode == Settings.TagSortMode.ZhuyinReverse)
+                System.Globalization.CultureInfo.GetCultureInfo("zh-TW_pronun");
+        }
+
+        void UpdateTagSortMenu()
+        {
+            foreach (ToolStripMenuItem item in tagSortMenu.DropDownItems)
+                item.Checked = (Settings.TagSortMode)item.Tag == Settings.Configs.TagSort;
+            tsmiAlphabeticalSort.Checked = Settings.Configs.TagSort == Settings.TagSortMode.Legacy &&
+                Settings.Configs.SortTags;
+        }
+
+        void TagSortOptionClick(object sender, EventArgs e)
+        {
+            try
+            {
+                Settings.TagSortMode mode = (Settings.TagSortMode)((ToolStripMenuItem)sender).Tag;
+                ValidateTagSortMode(mode);
+                Settings.Configs.TagSort = mode;
+                UpdateTagSortMenu();
                 RefreshTreeView(Source.RefreshType.None, true, -1);
             }
             catch (Exception ex) { Main.ErrorOut(ex); }

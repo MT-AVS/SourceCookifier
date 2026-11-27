@@ -314,7 +314,9 @@ namespace SourceCookifier
                         Settings.TreeViewMode saveTreeViewMode = Settings.Configs.ViewMode;
                         Settings.Configs.ViewMode = Settings.TreeViewMode.Flat;
                         bool saveSortTags = Settings.Configs.SortTags;
+                        Settings.TagSortMode saveTagSort = Settings.Configs.TagSort;
                         Settings.Configs.SortTags = false;
+                        Settings.Configs.TagSort = Settings.TagSortMode.Legacy;
 
                         foreach (string tagtypename in TagTypes.Keys)
                         {
@@ -377,6 +379,7 @@ namespace SourceCookifier
 
                         Settings.Configs.ViewMode = saveTreeViewMode;
                         Settings.Configs.SortTags = saveSortTags;
+                        Settings.Configs.TagSort = saveTagSort;
 
                         break;
                     case Settings.TreeViewMode.ClassSession:
@@ -497,10 +500,27 @@ namespace SourceCookifier
         public const string INCLUDES = "***INCLUDES***";
         public static List<IncludeFile> invisibleIncludeFileNodes = new List<IncludeFile>();
         public static Font fontIncludeItalic = null;
+        public static void UpdateIncludeFonts(TreeView treeview)
+        {
+            Font oldFont = fontIncludeItalic;
+            Font newFont = new Font(treeview.Font, treeview.Font.Style | FontStyle.Italic);
+            TreeNode includesNode = treeview.Nodes[INCLUDES];
+            if (includesNode != null)
+            {
+                includesNode.NodeFont = newFont;
+                foreach (TreeNode node in includesNode.Nodes)
+                    node.NodeFont = newFont;
+            }
+            foreach (IncludeFile incFile in invisibleIncludeFileNodes)
+                incFile.NodeFont = newFont;
+            fontIncludeItalic = newFont;
+            if (oldFont != null) oldFont.Dispose();
+        }
+
         public static TreeNode GetIncludesRootNode(TreeView treeview)
         {
             if (fontIncludeItalic == null)
-                fontIncludeItalic = new Font(treeview.Font.FontFamily, treeview.Font.Size, FontStyle.Italic);
+                UpdateIncludeFonts(treeview);
             if (!treeview.Nodes.ContainsKey(INCLUDES))
             {
                 TreeNode includesNode = null;
@@ -626,6 +646,7 @@ namespace SourceCookifier
         public string ScopeOperator = "";
         public string SourceFile = "";
         public int Line = -1;
+        public int SortPosition = -1;
         public string TagName = "";
         public string Identifier = "";
         public string ParentIdentifier = "";
@@ -710,6 +731,14 @@ namespace SourceCookifier
             ScopeOperator = info.GetString("ScopeOperator");
             SourceFile = info.GetString("SourceFile");
             Line = info.GetInt32("Line");
+            foreach (SerializationEntry entry in info)
+            {
+                if (entry.Name == "SortPosition")
+                {
+                    SortPosition = (int)entry.Value;
+                    break;
+                }
+            }
             TagName = info.GetString("TagName");
             Identifier = info.GetString("Identifier");
             ParentIdentifier = info.GetString("ParentIdentifier");
@@ -724,6 +753,7 @@ namespace SourceCookifier
             info.AddValue("ScopeOperator", ScopeOperator);
             info.AddValue("SourceFile", SourceFile);
             info.AddValue("Line", Line);
+            info.AddValue("SortPosition", SortPosition);
             info.AddValue("TagName", TagName);
             info.AddValue("Identifier", Identifier);
             info.AddValue("ParentIdentifier", ParentIdentifier);
@@ -874,6 +904,35 @@ namespace SourceCookifier
     
     public class TagNodeSorter : System.Collections.IComparer
     {
+        static string ZhuyinSortText(string text)
+        {
+            if (text.Length >= 2 && text[0] == '\u300a' && text[text.Length - 1] == '\u300b')
+                return text.Substring(1, text.Length - 2);
+            return text;
+        }
+
+        static int CompareTagOrder(string name1, int line1, int position1,
+            string name2, int line2, int position2)
+        {
+            Settings.TagSortMode mode = Settings.Configs.TagSort;
+            bool zhuyin = mode == Settings.TagSortMode.ZhuyinForward ||
+                mode == Settings.TagSortMode.ZhuyinReverse;
+            bool reverse = mode == Settings.TagSortMode.DocumentReverse ||
+                mode == Settings.TagSortMode.ZhuyinReverse;
+            int result = 0;
+            if (zhuyin)
+            {
+                result = System.Globalization.CultureInfo.GetCultureInfo("zh-TW_pronun").CompareInfo.Compare(
+                    ZhuyinSortText(name1), ZhuyinSortText(name2));
+            }
+            if (result == 0)
+                result = line1.CompareTo(line2);
+            if (result == 0)
+                result = position1.CompareTo(position2);
+            result = Math.Sign(result);
+            return reverse ? -result : result;
+        }
+
         public int Compare(object obj1, object obj2)
         {
             try
@@ -889,6 +948,9 @@ namespace SourceCookifier
                             || (Settings.Configs.ViewMode == Settings.TreeViewMode.Grouped)
                             || (tag1.Identifier == tag2.Identifier))
                         {
+                            if (Settings.Configs.TagSort != Settings.TagSortMode.Legacy)
+                                return CompareTagOrder(tag1.TagName, tag1.Line, tag1.SortPosition,
+                                    tag2.TagName, tag2.Line, tag2.SortPosition);
                             if (Settings.Configs.SortTags)
                             {
                                 return string.Compare(tag1.TagName, tag2.TagName);
@@ -980,6 +1042,15 @@ namespace SourceCookifier
                             if (identifier == type2) break; else index2++;
                         if (index1 == index2)
                         {
+                            if (Settings.Configs.TagSort != Settings.TagSortMode.Legacy)
+                            {
+                                Tag tag1 = node1 as Tag;
+                                Tag tag2 = node2 as Tag;
+                                return CompareTagOrder(tag1 != null ? tag1.TagName : node1.Text, line1,
+                                    tag1 != null ? tag1.SortPosition : -1,
+                                    tag2 != null ? tag2.TagName : node2.Text, line2,
+                                    tag2 != null ? tag2.SortPosition : -1);
+                            }
                             if (Settings.Configs.SortTags)
                             {
                                 return string.Compare(node1.Text, node2.Text);

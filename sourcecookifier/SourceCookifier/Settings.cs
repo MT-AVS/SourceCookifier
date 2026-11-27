@@ -27,6 +27,7 @@ namespace SourceCookifier
 
         public enum SessionMode { None, Cookie, Npp }
         public enum TreeViewMode { Flat, FlatGrouped, Grouped, ClassSingle, ClassSession }
+        public enum TagSortMode { Legacy, DocumentForward, DocumentReverse, ZhuyinForward, ZhuyinReverse }
         public class Config
         {
             // General
@@ -52,6 +53,9 @@ namespace SourceCookifier
             public bool ShowToolTips = true;
             public bool ShowPlusMinusSource = true;
             public bool ShowPlusMinusTags = true;
+            public string TreeFontName = "";
+            public float TreeFontSize = 0;
+            public FontStyle TreeFontStyle = FontStyle.Regular;
             // Toolbar button states
             public bool SearchInSession = false;
             public SessionMode SessionMode = SessionMode.None;
@@ -59,7 +63,22 @@ namespace SourceCookifier
             public TreeViewMode ViewMode = TreeViewMode.FlatGrouped;
             public bool ShowIcons = true;
             public bool SortTags = false;
+            public TagSortMode TagSort = TagSortMode.Legacy;
             public int FoldLevel = 2;
+
+            public Font CreateTreeFont()
+            {
+                if (string.IsNullOrEmpty(TreeFontName)) return null;
+                using (FontFamily family = new FontFamily(TreeFontName))
+                    return new Font(family, TreeFontSize, TreeFontStyle, GraphicsUnit.Point);
+            }
+
+            public void SetTreeFont(Font font)
+            {
+                TreeFontName = font == null ? "" : font.Name;
+                TreeFontSize = font == null ? 0 : font.SizeInPoints;
+                TreeFontStyle = font == null ? FontStyle.Regular : font.Style;
+            }
         }
         public static Config Configs;
         
@@ -310,6 +329,7 @@ namespace SourceCookifier
                 }
                 treeview.Nodes.Add(sourceNode);
             }
+            Source.UpdateIncludeFonts(treeview);
             SessionChanged = false;
             Main.TRACE("-END-");
         }

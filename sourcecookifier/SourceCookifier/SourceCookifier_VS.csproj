@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
@@ -39,6 +40,9 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="DllExport" Version="1.8.1" GeneratePathProperty="true" PrivateAssets="all" ExcludeAssets="all" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -198,7 +202,15 @@
     <None Include="Properties\cookie_monster_bmp.bmp" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(MSBuildProjectDirectory)\DllExport\NppPlugin.DllExport.targets" />
+  <PropertyGroup>
+    <DllExportNamespace>NppPlugin.DllExport</DllExportNamespace>
+    <DllExportMetaLibFullPath>$(IntermediateOutputPath)$(TargetFileName)</DllExportMetaLibFullPath>
+    <DllExportOurILAsm>true</DllExportOurILAsm>
+  </PropertyGroup>
+  <Import Project="$(PkgDllExport)\tools\net.r_eg.DllExport.targets" Condition="Exists('$(PkgDllExport)\tools\net.r_eg.DllExport.targets')" />
+  <Target Name="CheckDllExportRestored" BeforeTargets="PrepareForBuild" Condition="!Exists('$(PkgDllExport)\tools\net.r_eg.DllExport.targets')">
+    <Error Text="DllExport is missing. Restore NuGet packages before building." />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

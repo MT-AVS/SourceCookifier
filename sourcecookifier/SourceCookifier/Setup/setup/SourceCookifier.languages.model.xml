@@ -5681,4 +5681,43 @@
       </Language>
     </value>
   </item>
+  <item>
+    <key>
+      <string>TXT</string>
+    </key>
+    <value>
+      <Language xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+        <BuildIn>false</BuildIn>
+        <Extensions>
+          <string>.txt</string>
+        </Extensions>
+        <DisplayAccess>false</DisplayAccess>
+        <DisplayReturnType>false</DisplayReturnType>
+        <DisplayScope>false</DisplayScope>
+        <DisplaySignature>false</DisplaySignature>
+        <CaseSensitive>true</CaseSensitive>
+        <ScopeOperator>.</ScopeOperator>
+        <TagTypes>
+          <item>
+            <key>
+              <string>a</string>
+            </key>
+            <value>
+              <TagType>
+                <Description>New TagType [a]</Description>
+                <BuildIn>false</BuildIn>
+                <RegexPatterns>
+                  <string>/《(.*?)》(之《(.*?)》)?/《\1》\2/a/ei</string>
+                </RegexPatterns>
+                <Show>true</Show>
+                <TrackCaret>false</TrackCaret>
+                <IconFilename>LABEL_4.png</IconFilename>
+                <ForeColor>-16777216</ForeColor>
+              </TagType>
+            </value>
+          </item>
+        </TagTypes>
+      </Language>
+    </value>
+  </item>
 </SerializableDictionaryOfStringLanguage>
